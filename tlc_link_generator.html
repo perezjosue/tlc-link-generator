@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>TLC Link Generator</title>
+  <title>TLC Deep Link Generator</title>
   <meta charset="UTF-8">
   <style>
     body {
@@ -21,7 +21,7 @@
       text-align: center;
       color: #333;
     }
-    input[type="text"], textarea {
+    textarea {
       padding: 10px;
       font-size: 16px;
       border-radius: 6px;
@@ -29,17 +29,19 @@
       margin-top: 5px;
       margin-bottom: 10px;
       box-sizing: border-box;
-    }
-    #pasteUrl {
-      width: 100%;
-      max-width: 360px;
-    }
-    #result {
       width: 100%;
       resize: none;
       overflow-wrap: break-word;
       white-space: normal;
-      rows: 5;
+    }
+    #pasteUrl {
+      max-width: 100%;
+    }
+    #errorMsg {
+      color: #dc3545;
+      font-size: 14px;
+      margin-bottom: 10px;
+      display: none;
     }
     #copyMsg {
       color: green;
@@ -47,6 +49,7 @@
       margin-left: 10px;
       vertical-align: middle;
       display: none;
+      transition: opacity 0.5s ease;
     }
     button {
       padding: 10px 20px;
@@ -78,9 +81,6 @@
       background-color: #ccc;
       cursor: not-allowed;
     }
-    #generateBtn {
-      margin-bottom: 10px;
-    }
     .btn-group {
       margin-bottom: 40px;
     }
@@ -98,7 +98,7 @@
       margin-bottom: 5px;
       color: #444;
     }
-    input:focus, textarea:focus {
+    textarea:focus {
       outline: none;
       border-color: #007bff;
       box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
@@ -110,16 +110,16 @@
     <h2>TLC Deep Link Generator</h2>
 
     <label for="pasteUrl"><strong>Paste TLC URL:</strong></label>
-    <input type="text" id="pasteUrl" placeholder="Paste full TLC link here" oninput="extractUUID()">
+    <textarea id="pasteUrl" placeholder="Paste full TLC link here" oninput="extractUUID(); autoResize(this, 1);" autocomplete="off"></textarea>
+    <div id="errorMsg">Invalid TLC URL. Please check and try again.</div>
 
     <div class="btn-group">
-      <button id="generateBtn" class="btn-blue" onclick="generateLink()" disabled>Generate Link</button>
       <button class="btn-red" onclick="clearInput()">Clear</button>
     </div>
 
     <div class="link-box">
       <strong>Generated Link:</strong>
-      <textarea id="result" rows="5" readonly oninput="autoResize(this)"></textarea>
+      <textarea id="result" readonly oninput="autoResize(this, 1)" autocomplete="off"></textarea>
       <div>
         <button id="testBtn" class="btn-blue" onclick="testLink()" disabled>Test Link</button>
         <button id="copyBtn" class="btn-blue" onclick="copyLink()" disabled>Copy Link</button>
@@ -130,18 +130,20 @@
 
   <script>
     let extractedUUID = '';
+    let fadeTimer;
 
     function extractUUID() {
       const url = document.getElementById("pasteUrl").value.trim();
-      const match = url.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-      const generateBtn = document.getElementById("generateBtn");
+      const match = url.match(/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/);
+      const errorMsg = document.getElementById("errorMsg");
       if (match) {
         extractedUUID = match[0];
+        errorMsg.style.display = 'none';
         generateLink();
-        generateBtn.disabled = false;
       } else {
         extractedUUID = '';
-        generateBtn.disabled = true;
+        errorMsg.style.display = 'block';
+        clearLinkOutput();
       }
     }
 
@@ -151,29 +153,41 @@
       const fullUrl = baseUrl + extractedUUID;
       const resultBox = document.getElementById("result");
       resultBox.value = fullUrl;
-      autoResize(resultBox);
+      autoResize(resultBox, 1);
       document.getElementById("testBtn").disabled = false;
       document.getElementById("copyBtn").disabled = false;
-      document.getElementById("copyMsg").style.display = "none";
+      clearCopyMessage();
     }
 
-    function autoResize(el) {
+    function clearLinkOutput() {
+      document.getElementById("result").value = '';
+      document.getElementById("result").style.height = 'auto';
+      document.getElementById("testBtn").disabled = true;
+      document.getElementById("copyBtn").disabled = true;
+      clearCopyMessage();
+    }
+
+    function autoResize(el, extraLines = 0) {
       el.style.height = 'auto';
-      el.style.height = el.scrollHeight + 'px';
+      const lineHeight = 24;
+      el.style.height = (el.scrollHeight + extraLines * lineHeight) + 'px';
     }
 
     function copyLink() {
-      const link = document.getElementById("result");
+      const fallback = document.getElementById("result");
       const msg = document.getElementById("copyMsg");
+      fallback.select();
+      fallback.setSelectionRange(0, 99999);
+      document.execCommand("copy");
+      msg.style.display = "inline";
+      clearTimeout(fadeTimer);
+      fadeTimer = setTimeout(() => msg.style.display = 'none', 30000);
+    }
 
-      try {
-        link.select();
-        link.setSelectionRange(0, 99999);
-        document.execCommand("copy");
-        msg.style.display = "inline";
-      } catch (err) {
-        alert("Failed to copy. Please try manually.");
-      }
+    function clearCopyMessage() {
+      const msg = document.getElementById("copyMsg");
+      msg.style.display = 'none';
+      clearTimeout(fadeTimer);
     }
 
     function testLink() {
@@ -187,13 +201,14 @@
       const urlInput = document.getElementById("pasteUrl");
       const copyBtn = document.getElementById("copyBtn");
       urlInput.value = '';
+      urlInput.style.height = 'auto';
       const resultBox = document.getElementById("result");
       resultBox.value = '';
       resultBox.style.height = 'auto';
       document.getElementById("testBtn").disabled = true;
       copyBtn.disabled = true;
-      document.getElementById("generateBtn").disabled = true;
-      document.getElementById("copyMsg").style.display = 'none';
+      document.getElementById("errorMsg").style.display = 'none';
+      clearCopyMessage();
       extractedUUID = '';
       urlInput.focus();
     }
