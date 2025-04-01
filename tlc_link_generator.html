@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TLC Link Generator</title>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 40px;
+    }
+    .container {
+      background-color: #fff;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    input[type="text"], textarea {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    #courseCode {
+      width: 100%;
+      max-width: 360px;
+    }
+    #result {
+      width: 100%;
+      resize: none;
+      overflow-wrap: break-word;
+      white-space: normal;
+      rows: 5;
+    }
+    #error {
+      color: #dc3545;
+      font-size: 14px;
+      margin-top: -8px;
+      margin-bottom: 10px;
+      display: none;
+    }
+    #copyMsg {
+      color: green;
+      font-size: 14px;
+      margin-left: 10px;
+      vertical-align: middle;
+      display: none;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      margin-top: 5px;
+      margin-right: 10px;
+      min-width: 140px;
+    }
+    .btn-blue {
+      background-color: #007bff;
+    }
+    .btn-blue:hover:enabled {
+      background-color: #0056b3;
+    }
+    .btn-green {
+      background-color: #28a745 !important;
+    }
+    .btn-red {
+      background-color: #dc3545;
+    }
+    .btn-red:hover:enabled {
+      background-color: #a71d2a;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    #generateBtn {
+      margin-bottom: 10px;
+    }
+    .btn-group {
+      margin-bottom: 40px;
+    }
+    .link-box {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      background-color: #fafafa;
+      margin-top: 10px;
+      overflow-wrap: break-word;
+    }
+    label, strong {
+      font-size: 16px;
+      display: block;
+      margin-bottom: 5px;
+      color: #444;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+    }
+    input.invalid {
+      border-color: #dc3545;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>TLC Deep Link Generator</h2>
+
+    <label for="courseCode"><strong>Enter UUID:</strong></label>
+    <input type="text" id="courseCode" maxlength="36" placeholder="e.g., 5509f92f-4e0f-4a86-a5d9-8e8c3316b179" oninput="handleInput()">
+    <div id="error">Invalid UUID format. Please check your UUID.</div>
+
+    <div class="btn-group">
+      <button id="generateBtn" class="btn-blue" onclick="generateLink()" disabled>Generate Link</button>
+      <button class="btn-red" onclick="clearInput()">Clear</button>
+    </div>
+
+    <div class="link-box">
+      <strong>Generated Link:</strong>
+      <textarea id="result" rows="5" readonly oninput="autoResize(this)"></textarea>
+      <div>
+        <button id="testBtn" class="btn-blue" onclick="testLink()" disabled>Test Link</button>
+        <button id="copyBtn" class="btn-blue" onclick="copyLink()" disabled>Copy Link</button>
+        <span id="copyMsg">✔ Link copied!</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.onload = () => {
+      document.getElementById('courseCode').focus();
+    };
+
+    function handleInput() {
+      const codeInput = document.getElementById("courseCode");
+      const generateBtn = document.getElementById("generateBtn");
+      const errorMsg = document.getElementById("error");
+      const validUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const code = codeInput.value.trim();
+
+      if (validUuid.test(code)) {
+        generateBtn.disabled = false;
+        errorMsg.style.display = "none";
+        codeInput.classList.remove("invalid");
+      } else {
+        generateBtn.disabled = true;
+        errorMsg.style.display = code.length > 0 ? "block" : "none";
+        codeInput.classList.add("invalid");
+      }
+    }
+
+    function generateLink() {
+      const baseUrl = "https://toyota.csod.com/samldefault.aspx?ouid=1&returnUrl=%252fDeepLink%252fProcessRedirect.aspx%253fmodule%253dlodetails%2526lo%253d";
+      const code = document.getElementById("courseCode").value.trim();
+      const fullUrl = baseUrl + code;
+      const resultBox = document.getElementById("result");
+      resultBox.value = fullUrl;
+      autoResize(resultBox);
+      document.getElementById("testBtn").disabled = false;
+      const copyBtn = document.getElementById("copyBtn");
+      copyBtn.disabled = false;
+      document.getElementById("copyMsg").style.display = "none";
+    }
+
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    function copyLink() {
+      const link = document.getElementById("result");
+      const msg = document.getElementById("copyMsg");
+
+      try {
+        link.select();
+        link.setSelectionRange(0, 99999);
+        document.execCommand("copy");
+        msg.style.display = "inline";
+      } catch (err) {
+        alert("Failed to copy. Please try manually.");
+      }
+    }
+
+    function testLink() {
+      const link = document.getElementById("result").value;
+      if (link) {
+        window.open(link, '', 'width=1250,height=800,toolbar=yes,scrollbars=yes,resizable=yes');
+      }
+    }
+
+    function clearInput() {
+      const input = document.getElementById("courseCode");
+      const copyBtn = document.getElementById("copyBtn");
+      input.value = '';
+      input.classList.remove("invalid");
+      const resultBox = document.getElementById("result");
+      resultBox.value = '';
+      resultBox.style.height = 'auto';
+      document.getElementById("testBtn").disabled = true;
+      copyBtn.disabled = true;
+      document.getElementById("generateBtn").disabled = true;
+      document.getElementById("error").style.display = 'none';
+      document.getElementById("copyMsg").style.display = 'none';
+      input.focus();
+    }
+  </script>
+</body>
+</html>
