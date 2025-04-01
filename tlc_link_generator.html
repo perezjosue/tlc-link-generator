@@ -30,7 +30,7 @@
       margin-bottom: 10px;
       box-sizing: border-box;
     }
-    #courseCode {
+    #courseCode, #pasteUrl {
       width: 100%;
       max-width: 360px;
     }
@@ -119,6 +119,9 @@
   <div class="container">
     <h2>TLC Deep Link Generator</h2>
 
+    <label for="pasteUrl"><strong>Paste TLC URL:</strong></label>
+    <input type="text" id="pasteUrl" placeholder="Paste full TLC link here" oninput="extractUUID()">
+
     <label for="courseCode"><strong>Enter UUID:</strong></label>
     <input type="text" id="courseCode" maxlength="36" placeholder="e.g., 5509f92f-4e0f-4a86-a5d9-8e8c3316b179" oninput="handleInput()">
     <div id="error">Invalid UUID format. Please check your UUID.</div>
@@ -143,6 +146,15 @@
     window.onload = () => {
       document.getElementById('courseCode').focus();
     };
+
+    function extractUUID() {
+      const url = document.getElementById("pasteUrl").value.trim();
+      const match = url.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      if (match) {
+        document.getElementById("courseCode").value = match[0];
+        generateLink();
+      }
+    }
 
     function handleInput() {
       const codeInput = document.getElementById("courseCode");
@@ -170,8 +182,7 @@
       resultBox.value = fullUrl;
       autoResize(resultBox);
       document.getElementById("testBtn").disabled = false;
-      const copyBtn = document.getElementById("copyBtn");
-      copyBtn.disabled = false;
+      document.getElementById("copyBtn").disabled = false;
       document.getElementById("copyMsg").style.display = "none";
     }
 
@@ -203,8 +214,10 @@
 
     function clearInput() {
       const input = document.getElementById("courseCode");
+      const urlInput = document.getElementById("pasteUrl");
       const copyBtn = document.getElementById("copyBtn");
       input.value = '';
+      urlInput.value = '';
       input.classList.remove("invalid");
       const resultBox = document.getElementById("result");
       resultBox.value = '';
