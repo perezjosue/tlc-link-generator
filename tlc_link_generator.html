@@ -30,7 +30,7 @@
       margin-bottom: 10px;
       box-sizing: border-box;
     }
-    #courseCode, #pasteUrl {
+    #pasteUrl {
       width: 100%;
       max-width: 360px;
     }
@@ -40,13 +40,6 @@
       overflow-wrap: break-word;
       white-space: normal;
       rows: 5;
-    }
-    #error {
-      color: #dc3545;
-      font-size: 14px;
-      margin-top: -8px;
-      margin-bottom: 10px;
-      display: none;
     }
     #copyMsg {
       color: green;
@@ -110,21 +103,14 @@
       border-color: #007bff;
       box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
     }
-    input.invalid {
-      border-color: #dc3545;
-    }
   </style>
 </head>
-<body>
+<body onload="document.getElementById('pasteUrl').focus()">
   <div class="container">
     <h2>TLC Deep Link Generator</h2>
 
     <label for="pasteUrl"><strong>Paste TLC URL:</strong></label>
     <input type="text" id="pasteUrl" placeholder="Paste full TLC link here" oninput="extractUUID()">
-
-    <label for="courseCode"><strong>Enter UUID:</strong></label>
-    <input type="text" id="courseCode" maxlength="36" placeholder="e.g., 5509f92f-4e0f-4a86-a5d9-8e8c3316b179" oninput="handleInput()">
-    <div id="error">Invalid UUID format. Please check your UUID.</div>
 
     <div class="btn-group">
       <button id="generateBtn" class="btn-blue" onclick="generateLink()" disabled>Generate Link</button>
@@ -143,41 +129,26 @@
   </div>
 
   <script>
-    window.onload = () => {
-      document.getElementById('courseCode').focus();
-    };
+    let extractedUUID = '';
 
     function extractUUID() {
       const url = document.getElementById("pasteUrl").value.trim();
       const match = url.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-      if (match) {
-        document.getElementById("courseCode").value = match[0];
-        generateLink();
-      }
-    }
-
-    function handleInput() {
-      const codeInput = document.getElementById("courseCode");
       const generateBtn = document.getElementById("generateBtn");
-      const errorMsg = document.getElementById("error");
-      const validUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const code = codeInput.value.trim();
-
-      if (validUuid.test(code)) {
+      if (match) {
+        extractedUUID = match[0];
+        generateLink();
         generateBtn.disabled = false;
-        errorMsg.style.display = "none";
-        codeInput.classList.remove("invalid");
       } else {
+        extractedUUID = '';
         generateBtn.disabled = true;
-        errorMsg.style.display = code.length > 0 ? "block" : "none";
-        codeInput.classList.add("invalid");
       }
     }
 
     function generateLink() {
+      if (!extractedUUID) return;
       const baseUrl = "https://toyota.csod.com/samldefault.aspx?ouid=1&returnUrl=%252fDeepLink%252fProcessRedirect.aspx%253fmodule%253dlodetails%2526lo%253d";
-      const code = document.getElementById("courseCode").value.trim();
-      const fullUrl = baseUrl + code;
+      const fullUrl = baseUrl + extractedUUID;
       const resultBox = document.getElementById("result");
       resultBox.value = fullUrl;
       autoResize(resultBox);
@@ -213,21 +184,18 @@
     }
 
     function clearInput() {
-      const input = document.getElementById("courseCode");
       const urlInput = document.getElementById("pasteUrl");
       const copyBtn = document.getElementById("copyBtn");
-      input.value = '';
       urlInput.value = '';
-      input.classList.remove("invalid");
       const resultBox = document.getElementById("result");
       resultBox.value = '';
       resultBox.style.height = 'auto';
       document.getElementById("testBtn").disabled = true;
       copyBtn.disabled = true;
       document.getElementById("generateBtn").disabled = true;
-      document.getElementById("error").style.display = 'none';
       document.getElementById("copyMsg").style.display = 'none';
-      input.focus();
+      extractedUUID = '';
+      urlInput.focus();
     }
   </script>
 </body>
